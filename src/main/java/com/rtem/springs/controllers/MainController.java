@@ -17,6 +17,16 @@ public class MainController {
         return "withAuth page: " + principal.getName();
     }
 
+    @GetMapping("/read_profile")
+    public String profilePage() {
+        return "profile page";
+    }
+
+    @GetMapping("/admins_only")
+    public String adminPage() {
+        return "admins page";
+    }
+
 
 
 }
