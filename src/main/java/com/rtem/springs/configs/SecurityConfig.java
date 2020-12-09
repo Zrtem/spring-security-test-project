@@ -1,18 +1,23 @@
 package com.rtem.springs.configs;
 
-import javax.sql.DataSource;
+import com.rtem.springs.services.UserService;
 import org.springframework.context.annotation.Bean;
+import org.springframework.security.authentication.dao.DaoAuthenticationProvider;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.annotation.web.configuration.WebSecurityConfigurerAdapter;
-import org.springframework.security.core.userdetails.User;
-import org.springframework.security.core.userdetails.UserDetails;
-import org.springframework.security.core.userdetails.UserDetailsService;
-import org.springframework.security.provisioning.InMemoryUserDetailsManager;
-import org.springframework.security.provisioning.JdbcUserDetailsManager;
+import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
+import org.springframework.security.crypto.password.PasswordEncoder;
 
 @EnableWebSecurity
 public class SecurityConfig extends WebSecurityConfigurerAdapter {
+
+    private final UserService userService;
+
+    public SecurityConfig(UserService userService) {
+        this.userService = userService;
+    }
+
 
     @Override
     protected void configure(HttpSecurity http) throws Exception {
@@ -45,28 +50,20 @@ public class SecurityConfig extends WebSecurityConfigurerAdapter {
 //    }
 
     //JDBC authentication
+//
+    //DAO authentication
     @Bean
-    public JdbcUserDetailsManager users(DataSource dataSource) {
-        UserDetails user = User.builder()
-                .username("user")
-                .password("{bcrypt}$2y$12$UFCAib64Am1jGSAHhYgpSeeQYZkicM2Jd3AZtkv7LZyqFdwkBHAvO")
-                .roles("USER")
-                .build();
-        UserDetails admin = User.builder()
-                .username("admin")
-                .password("{bcrypt}$2y$12$UFCAib64Am1jGSAHhYgpSeeQYZkicM2Jd3AZtkv7LZyqFdwkBHAvO")
-                .roles("ADMIN", "USER")
-                .build();
-        JdbcUserDetailsManager jdbcUserDetailsManager = new JdbcUserDetailsManager(dataSource);
-        if (!jdbcUserDetailsManager.userExists(user.getUsername())) {
-            jdbcUserDetailsManager.createUser(user);
-        }
-
-        if (!jdbcUserDetailsManager.userExists(admin.getUsername())) {
-            jdbcUserDetailsManager.createUser(admin);
-        }
-
-        return jdbcUserDetailsManager;
+    public PasswordEncoder passwordEncoder() {
+        return new BCryptPasswordEncoder();
     }
+
+    @Bean
+    public DaoAuthenticationProvider daoAuthenticationProvider() {
+        DaoAuthenticationProvider authenticationProvider = new DaoAuthenticationProvider();
+        authenticationProvider.setPasswordEncoder(passwordEncoder());
+        authenticationProvider.setUserDetailsService(userService);
+        return authenticationProvider;
+    }
+
 
 }
